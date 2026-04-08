@@ -14,7 +14,7 @@ LOG_LEVEL = os.getenv('LOG_LEVEL', 'DEBUG').upper()
 # Configuração de logs
 logging.basicConfig(
     level=getattr(logging, LOG_LEVEL, logging.INFO),
-    format='%(asctime)s %(levelname)s [%(name)s] %(message)s',
+    format='[%(name)s] %(message)s',
     stream=sys.stdout,
 )
 logger = logging.getLogger('speedtest_exporter')

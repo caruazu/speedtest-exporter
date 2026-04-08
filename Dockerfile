@@ -1,4 +1,3 @@
-# Usamos uma versão slim do Python para manter a imagem leve
 FROM python:3.11-slim
 
 # Variáveis de ambiente para evitar buffer no log
