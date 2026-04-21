@@ -1,7 +1,8 @@
-import time
 import json
-import subprocess
 import os
+import subprocess
+import time
+
 from prometheus_client import start_http_server, Gauge
 
 from log_formatter import build_logger
@@ -11,7 +12,7 @@ UPDATE_INTERVAL = int(os.getenv('SPEEDTEST_CACHE_SECONDS', 14400))
 PORT = int(os.getenv('EXPORTER_PORT', 9798))
 LOG_LEVEL = os.getenv('LOG_LEVEL', 'DEBUG').upper()
 
-# Logger JSON estruturado — compatível com Grafana Loki / Alloy
+# Logger logfmt estruturado — compatível com Grafana Loki / Alloy
 logger = build_logger('speedtest_exporter', level=LOG_LEVEL)
 
 # Métricas do Prometheus
@@ -31,38 +32,26 @@ def run_speedtest():
             text=True,
             check=True,
         )
-        logger.debug('Comando speedtest executado com sucesso')
 
         data = json.loads(result.stdout)
-        logger.debug('Resposta JSON carregada com sucesso')
 
-        # Extrai dados crus (Bytes)
         download_bytes = data['download']['bandwidth']
         upload_bytes   = data['upload']['bandwidth']
         ping           = data['ping']['latency']
         jitter         = data['ping']['jitter']
 
-        logger.info(
-            'Resultado do speedtest',
-            extra={
-                'download_bytes_per_sec': download_bytes,
-                'upload_bytes_per_sec':   upload_bytes,
-                'ping_ms':                ping,
-                'jitter_ms':              jitter,
-            },
-        )
-
-        # Atualiza métricas
         DOWNLOAD.set(download_bytes)
         UPLOAD.set(upload_bytes)
         PING.set(ping)
         JITTER.set(jitter)
 
         logger.info(
-            'Metricas atualizadas com sucesso',
+            'Metricas atualizadas',
             extra={
                 'download_mbps': round(download_bytes / 1024 / 1024, 2),
                 'upload_mbps':   round(upload_bytes   / 1024 / 1024, 2),
+                'ping_ms':       ping,
+                'jitter_ms':     jitter,
             },
         )
 
@@ -71,12 +60,12 @@ def run_speedtest():
             'Erro ao executar speedtest',
             extra={'stderr': e.stderr.strip() if e.stderr else str(e)},
         )
-    except json.JSONDecodeError as e:
-        logger.exception('Falha ao interpretar JSON retornado pelo speedtest', extra={'error': str(e)})
+    except json.JSONDecodeError:
+        logger.exception('Falha ao interpretar JSON retornado pelo speedtest')
     except KeyError as e:
         logger.exception('Campo esperado nao encontrado no resultado do speedtest', extra={'campo': str(e)})
     except Exception:
-        logger.exception('Erro geral durante a execucao do speedtest')
+        logger.exception('Erro inesperado durante a execucao do speedtest')
 
 
 if __name__ == '__main__':
@@ -91,7 +80,6 @@ if __name__ == '__main__':
     start_http_server(PORT)
     logger.info('Exporter rodando', extra={'porta': PORT})
 
-    # Executa o primeiro teste imediatamente ao iniciar
     run_speedtest()
 
     while True:
