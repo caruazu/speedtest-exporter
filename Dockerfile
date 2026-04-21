@@ -36,7 +36,7 @@ WORKDIR /home/exporter/app
 
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
-COPY --chown=exporter:exporter exporter.py Pipfile Pipfile.lock ./
+COPY --chown=exporter:exporter exporter.py log_formatter.py Pipfile Pipfile.lock ./
 
 USER exporter
 
